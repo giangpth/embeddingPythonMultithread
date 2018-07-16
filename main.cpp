@@ -5,7 +5,7 @@
 
 using namespace std;
 //function to assign a new thread state for combination of new sub interpreter and thread then acquire gil lock and run code. Release gil lock when done.
-void do_stuff_in_thread(PyInterpreterState* interp, int tid)
+void do_stuff_in_thread(PyInterpreterState* interp, PyObject* ins, int tid)
 {
     // acquire the GIL
     PyEval_AcquireLock();
@@ -24,10 +24,8 @@ void do_stuff_in_thread(PyInterpreterState* interp, int tid)
 
     // PYTHON WORK HERE
     qDebug() << "Run python code";
-    PyInit_testmultithread();
     PyObject* id = PyLong_FromLong((long) tid);
-    PyObject* ins = createInstance(id);
-    testprocess(ins);
+    testprocess(ins, id);
     qDebug() << "Run python code done";
 
     // release ts
@@ -50,6 +48,10 @@ int main(int argc, char** argv)
 
     PyThreadState* maints = PyThreadState_Get(); //get thread state of main thread
 
+    PyInit_testmultithread();
+    PyObject* ins = createInstance();
+
+
     //Create 2 sub interpreters
     PyThreadState* ts1 = Py_NewInterpreter();
     PyThreadState* ts2 = Py_NewInterpreter();
@@ -63,8 +65,8 @@ int main(int argc, char** argv)
 
 
     //make 2 threads, assign new interpreter for each thread
-    thread th1(do_stuff_in_thread, ts1->interp, 1);
-    thread th2(do_stuff_in_thread, ts2->interp, 2);
+    thread th1(do_stuff_in_thread, ts1->interp, ins, 1);
+    thread th2(do_stuff_in_thread, ts2->interp, ins, 2);
     th1.join();
     th2.join();
 
